@@ -15,8 +15,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <!-- SheetJS (XLSX) -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-  <!-- Firebase SDK Compat -->
+  <!-- Firebase SDK Compat (App, Auth y Firestore) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <script>
@@ -49,7 +50,7 @@
 
   <div id="toastContainer" class="fixed top-5 right-5 z-[250] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- 1. PANTALLA DE LOGIN -->
+  <!-- 1. PANTALLA DE LOGIN CON FIREBASE AUTH -->
   <div id="loginScreen" class="fixed inset-0 z-[100] bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950 flex items-center justify-center p-4">
     <div id="loginCard" class="w-full max-w-md bg-slate-900/95 border border-slate-800 backdrop-blur-2xl rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 text-white relative overflow-hidden">
       <div class="text-center space-y-2 relative">
@@ -57,20 +58,20 @@
           <i class="fa-solid fa-gem"></i>
         </div>
         <h1 class="text-2xl font-black tracking-tight text-white">EPI PREORDER</h1>
-        <p class="text-xs text-slate-400">Control de Facturación a Crédito y Clientes</p>
+        <p class="text-xs text-slate-400">Acceso Seguro con Firebase Authentication</p>
       </div>
 
       <div id="loginErrorMsg" class="hidden p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
         <i class="fa-solid fa-triangle-exclamation text-rose-400 text-sm"></i>
-        <span id="loginErrorText">Usuario o contraseña incorrectos.</span>
+        <span id="loginErrorText">Correo o contraseña inválidos.</span>
       </div>
 
       <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4 relative">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Usuario</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
           <div class="relative">
-            <i class="fa-regular fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-            <input type="text" id="loginUsername" required autocomplete="username" value="epiabonos" placeholder="Nombre de usuario" class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+            <i class="fa-regular fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="email" id="loginEmail" required autocomplete="email" placeholder="admin@epipreorder.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
           </div>
         </div>
 
@@ -78,7 +79,7 @@
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Contraseña</label>
           <div class="relative">
             <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-            <input type="password" id="loginPassword" required autocomplete="current-password" value="abonos1234#" placeholder="••••••••" class="w-full pl-10 pr-11 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••" class="w-full pl-10 pr-11 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
             <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition p-1">
               <i id="eyeIcon" class="fa-regular fa-eye text-sm"></i>
             </button>
@@ -86,8 +87,8 @@
         </div>
 
         <button type="submit" id="btnLoginSubmit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-purple-900/40 transition transform active:scale-[0.99] flex items-center justify-center gap-2">
-          <span>Ingresar al Sistema</span>
-          <i class="fa-solid fa-arrow-right text-xs"></i>
+          <span id="btnLoginText">Ingresar al Sistema</span>
+          <i id="btnLoginIcon" class="fa-solid fa-arrow-right text-xs"></i>
         </button>
       </form>
     </div>
@@ -467,7 +468,7 @@
     </div>
   </div>
 
-  <!-- MODAL: REGISTRAR ABONO (SOLO POR FACTURA ESPECÍFICA) -->
+  <!-- MODAL: REGISTRAR ABONO (SOLO POR FACTURA ESPECÍFICA - OBLIGATORIO) -->
   <div id="modalPayment" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 modal-backdrop">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform modal-card border border-emerald-200">
       <div class="px-6 py-4 border-b border-emerald-100 bg-emerald-50/80 flex items-center justify-between">
@@ -736,15 +737,10 @@
   <iframe id="cleanPrintIframe" class="hidden"></iframe>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT: LÓGICA GENERAL                                                -->
+  <!-- JAVASCRIPT: LÓGICA GENERAL CON FIREBASE AUTHENTICATION                    -->
   <!-- ========================================================================= -->
   <script>
-    // CREDENCIALES DE ACCESO
-    const VALID_USER = "epiabonos";
-    const VALID_PASS = "abonos1234#";
-    const AUTH_SESSION_KEY = "credicontrol_usa_session_active_v1";
-
-    // BASE DE DATOS: credicontrol-usa
+    // BASE DE DATOS: credicontrol-usa (TUS CREDENCIALES REALES)
     const firebaseConfig = {
       apiKey: "AIzaSyAoM-EVa1LTO0mb2Op7uEAoqRDwtijpbeo",
       authDomain: "credicontrol-usa.firebaseapp.com",
@@ -755,11 +751,13 @@
     };
 
     let db = null;
+    let auth = null;
     try {
       if (typeof firebase !== 'undefined') {
         firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
         db = firebase.firestore();
-        console.log("Firebase Firestore [credicontrol-usa] conectado con éxito.");
+        console.log("Firebase Auth & Firestore [credicontrol-usa] inicializados con éxito.");
       }
     } catch (e) {
       console.warn("Modo local activo:", e);
@@ -777,14 +775,20 @@
       loadData();
       setDefaultDates();
 
-      const isLogged = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
-      if (!isLogged) {
-        showLoginScreen();
+      // Observador oficial de sesión criptográfica con Firebase Authentication
+      if (auth) {
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            console.log("Sesión activa con token de Firebase Auth:", user.email);
+            showAppScreen();
+            startCloudSync();
+          } else {
+            showLoginScreen();
+          }
+        });
       } else {
-        showAppScreen();
+        showLoginScreen();
       }
-
-      startCloudSync();
     };
 
     function showLoginScreen() {
@@ -802,30 +806,77 @@
       refreshDashboard();
     }
 
-    function handleLoginSubmit(e) {
+    // INICIO DE SESIÓN OFICIAL CON FIREBASE AUTH
+    async function handleLoginSubmit(e) {
       if (e) e.preventDefault();
-      const user = document.getElementById('loginUsername').value.trim();
-      const pass = document.getElementById('loginPassword').value.trim();
+      const email = document.getElementById('loginEmail')?.value.trim();
+      const password = document.getElementById('loginPassword')?.value.trim();
       const errorBox = document.getElementById('loginErrorMsg');
+      const errorText = document.getElementById('loginErrorText');
+      const btn = document.getElementById('btnLoginSubmit');
+      const btnText = document.getElementById('btnLoginText');
 
-      if (user.toLowerCase() === VALID_USER.toLowerCase() && pass === VALID_PASS) {
+      if (!email || !password) return;
+
+      if (!auth) {
+        if (errorBox) {
+          errorText.innerText = "Firebase Auth no está disponible en este momento.";
+          errorBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      try {
+        if (btn) btn.disabled = true;
+        if (btnText) btnText.innerText = "Verificando...";
         if (errorBox) errorBox.classList.add('hidden');
-        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-        showToast('Acceso concedido', 'success');
-        showAppScreen();
-      } else {
-        if (errorBox) errorBox.classList.remove('hidden');
+
+        // Función oficial de Firebase Auth con token criptográfico real
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        showToast(`Bienvenido: ${userCredential.user.email}`, 'success');
+        // onAuthStateChanged se encarga de mostrar la aplicación automáticamente
+      } catch (error) {
+        console.error("Error de autenticación Firebase:", error);
+        let msg = "Correo o contraseña incorrectos.";
+        if (error.code === 'auth/user-not-found') {
+          msg = "No existe ninguna cuenta registrada con este correo.";
+        } else if (error.code === 'auth/wrong-password') {
+          msg = "Contraseña incorrecta. Verifica e intenta de nuevo.";
+        } else if (error.code === 'auth/invalid-email') {
+          msg = "El formato del correo electrónico no es válido.";
+        } else if (error.code === 'auth/too-many-requests') {
+          msg = "Demasiados intentos fallidos. Intenta más tarde.";
+        } else if (error.message) {
+          msg = error.message;
+        }
+
+        if (errorBox) {
+          errorText.innerText = msg;
+          errorBox.classList.remove('hidden');
+        }
+
         const card = document.getElementById('loginCard');
         if (card) {
           card.classList.remove('shake-anim');
           void card.offsetWidth;
           card.classList.add('shake-anim');
         }
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = "Ingresar al Sistema";
       }
     }
 
-    function logoutSession() {
-      sessionStorage.removeItem(AUTH_SESSION_KEY);
+    // CIERRE DE SESIÓN EN FIREBASE AUTH
+    async function logoutSession() {
+      if (auth) {
+        try {
+          await auth.signOut();
+          showToast('Sesión cerrada correctamente', 'info');
+        } catch (err) {
+          console.error("Error al cerrar sesión:", err);
+        }
+      }
       location.reload();
     }
 
@@ -863,7 +914,7 @@
     }
 
     function startCloudSync() {
-      if (!db) return;
+      if (!db || !auth || !auth.currentUser) return;
       try {
         db.collection("clients").onSnapshot((snapshot) => {
           appData.clients = [];
