@@ -50,7 +50,7 @@
 
   <div id="toastContainer" class="fixed top-5 right-5 z-[250] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- 1. PANTALLA DE LOGIN CON FIREBASE AUTH -->
+  <!-- 1. PANTALLA DE LOGIN -->
   <div id="loginScreen" class="fixed inset-0 z-[100] bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950 flex items-center justify-center p-4">
     <div id="loginCard" class="w-full max-w-md bg-slate-900/95 border border-slate-800 backdrop-blur-2xl rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 text-white relative overflow-hidden">
       <div class="text-center space-y-2 relative">
@@ -468,7 +468,7 @@
     </div>
   </div>
 
-  <!-- MODAL: REGISTRAR ABONO (SOLO POR FACTURA ESPECÍFICA - OBLIGATORIO) -->
+  <!-- MODAL: REGISTRAR ABONO (SOLO POR FACTURA ESPECÍFICA) -->
   <div id="modalPayment" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 modal-backdrop">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform modal-card border border-emerald-200">
       <div class="px-6 py-4 border-b border-emerald-100 bg-emerald-50/80 flex items-center justify-between">
@@ -737,7 +737,7 @@
   <iframe id="cleanPrintIframe" class="hidden"></iframe>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT: LÓGICA GENERAL CON FIREBASE AUTHENTICATION                    -->
+  <!-- JAVASCRIPT: LÓGICA DE PERSISTENCIA Y ELIMINACIÓN CORREGIDA                -->
   <!-- ========================================================================= -->
   <script>
     // BASE DE DATOS: credicontrol-usa (TUS CREDENCIALES REALES)
@@ -775,7 +775,6 @@
       loadData();
       setDefaultDates();
 
-      // Observador oficial de sesión criptográfica con Firebase Authentication
       if (auth) {
         auth.onAuthStateChanged((user) => {
           if (user) {
@@ -806,7 +805,6 @@
       refreshDashboard();
     }
 
-    // INICIO DE SESIÓN OFICIAL CON FIREBASE AUTH
     async function handleLoginSubmit(e) {
       if (e) e.preventDefault();
       const email = document.getElementById('loginEmail')?.value.trim();
@@ -831,10 +829,8 @@
         if (btnText) btnText.innerText = "Verificando...";
         if (errorBox) errorBox.classList.add('hidden');
 
-        // Función oficial de Firebase Auth con token criptográfico real
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         showToast(`Bienvenido: ${userCredential.user.email}`, 'success');
-        // onAuthStateChanged se encarga de mostrar la aplicación automáticamente
       } catch (error) {
         console.error("Error de autenticación Firebase:", error);
         let msg = "Correo o contraseña incorrectos.";
@@ -867,7 +863,6 @@
       }
     }
 
-    // CIERRE DE SESIÓN EN FIREBASE AUTH
     async function logoutSession() {
       if (auth) {
         try {
@@ -914,7 +909,7 @@
     }
 
     function startCloudSync() {
-      if (!db || !auth || !auth.currentUser) return;
+      if (!db) return;
       try {
         db.collection("clients").onSnapshot((snapshot) => {
           appData.clients = [];
@@ -934,7 +929,6 @@
       }
     }
 
-    // GENERADOR CONSECUTIVO DE FACTURAS (Arranca en 000001 y suma 1)
     function getNextInvoiceNumber() {
       const sales = appData.transactions.filter(t => t.type === 'SALE');
       let maxNumber = 0;
@@ -954,7 +948,6 @@
       return 'FACT-' + String(nextNumber).padStart(6, '0');
     }
 
-    // MULTI-PRODUCTOS EN FORMULARIO DE FACTURA (CREACIÓN)
     function addSaleProductRow(name = '', qty = 1, cost = '', price = '') {
       const tbody = document.getElementById('saleProductsTableBody');
       if (!tbody) return;
@@ -1031,7 +1024,6 @@
       if (tEl) tEl.innerText = `$${formatCurrency(totalSale)}`;
     }
 
-    // MULTI-PRODUCTOS EN EDICIÓN DE FACTURA
     function addEditSaleProductRow(name = '', qty = 1, cost = '', price = '') {
       const tbody = document.getElementById('editSaleProductsTableBody');
       if (!tbody) return;
@@ -1108,7 +1100,7 @@
       if (tEl) tEl.innerText = `$${formatCurrency(totalSale)}`;
     }
 
-    // REGISTRAR VENTA / FACTURA (CON NÚMERO CONSECUTIVO AUTOMÁTICO)
+    // REGISTRAR VENTA / FACTURA (CON ID DE FIRESTORE SINCRONIZADO)
     async function handleSaveSale(e) {
       if (e) e.preventDefault();
       const clientId = document.getElementById('saleClientId')?.value;
@@ -1141,12 +1133,14 @@
         items.push({ name, qty, cost, price, subtotal });
       }
 
-      // Genera el número consecutivo correlativo (+1)
       const invoiceCode = getNextInvoiceNumber();
       const concept = items.map(it => `${it.qty}x ${it.name}`).join(', ');
 
+      // Generar un ID único de documento para sincronizar local y nube
+      const docId = db ? db.collection("transactions").doc().id : 'tx_' + Date.now();
+
       const newTx = {
-        id: 'tx_' + Date.now(),
+        id: docId,
         clientId: String(clientId),
         type: 'SALE',
         brand: BRAND_NAME,
@@ -1176,13 +1170,12 @@
       }
 
       if (db) {
-        db.collection("transactions").add(newTx).catch(err => {
+        db.collection("transactions").doc(docId).set(newTx).catch(err => {
           console.warn("Guardado en nube diferido:", err);
         });
       }
     }
 
-    // ABRIR EDICIÓN DE FACTURA
     function triggerEditSaleFromHistory(txId) {
       const tx = appData.transactions.find(t => String(t.id) === String(txId));
       if (!tx || tx.type !== 'SALE') return;
@@ -1208,7 +1201,6 @@
       openModalDirect('modalEditSale');
     }
 
-    // GUARDAR ACTUALIZACIÓN DE FACTURA
     async function handleUpdateSale(e) {
       if (e) e.preventDefault();
       const txId = document.getElementById('editSaleTxId').value;
@@ -1273,7 +1265,6 @@
       }
     }
 
-    // CÁLCULO DE SALDOS POR FACTURA Y TOTALES
     function getInvoiceBalance(txId) {
       const saleTx = appData.transactions.find(t => String(t.id) === String(txId) && t.type === 'SALE');
       if (!saleTx) return 0;
@@ -1445,7 +1436,6 @@
       });
     }
 
-    // VISUALIZACIÓN DEL HISTORIAL CON NÚMERO DE FACTURA EXCLUSIVO EN DETALLE
     function showClientHistory(clientId) {
       try {
         const client = appData.clients.find(c => String(c.id) === String(clientId) || String(c.doc) === String(clientId));
@@ -1618,7 +1608,6 @@
       renderHistoryTransactions();
     }
 
-    // GESTIÓN DE ABONOS EXCLUSIVOS POR FACTURA (OBLIGATORIO)
     function onPaymentClientChanged() {
       const clientId = document.getElementById('paymentClientId')?.value;
       const invoiceSelect = document.getElementById('paymentInvoiceId');
@@ -1674,7 +1663,6 @@
       validatePaymentAmountStrictly();
     }
 
-    // VALIDACIÓN: No muestra error si el campo está vacío o es 0
     function validatePaymentAmountStrictly() {
       const invoiceId = document.getElementById('paymentInvoiceId')?.value;
       const amountInput = document.getElementById('paymentAmountUSD')?.value.trim();
@@ -1733,8 +1721,10 @@
       const invCode = targetSale?.invoiceCode || targetSale?.ref || 'Factura';
       const concept = `Abono a ${invCode}`;
 
+      const docId = db ? db.collection("transactions").doc().id : 'tx_' + Date.now();
+
       const newTx = {
-        id: 'tx_' + Date.now(),
+        id: docId,
         clientId: String(clientId),
         invoiceId: String(invoiceId),
         type: 'PAYMENT',
@@ -1767,7 +1757,7 @@
       }
 
       if (db) {
-        db.collection("transactions").add(newTx).catch(err => console.warn(err));
+        db.collection("transactions").doc(docId).set(newTx).catch(err => console.warn(err));
       }
     }
 
@@ -1789,7 +1779,7 @@
       }
     }
 
-    // REGISTRO Y EDICIÓN DE CLIENTES
+    // REGISTRO DE CLIENTES (CON ID DE FIRESTORE SINCRONIZADO)
     function handleSaveClient(e) {
       if (e) e.preventDefault();
       const name = document.getElementById('clientName')?.value.trim();
@@ -1807,8 +1797,10 @@
         return;
       }
 
+      const docId = db ? db.collection("clients").doc().id : 'cli_' + Date.now();
+
       const newClient = {
-        id: 'cli_' + Date.now(),
+        id: docId,
         name, doc, phone, address,
         createdAt: Date.now()
       };
@@ -1822,7 +1814,7 @@
       showToast(`Cliente ${name} guardado`, 'success');
 
       if (db) {
-        db.collection("clients").add(newClient).catch(err => console.warn(err));
+        db.collection("clients").doc(docId).set(newClient).catch(err => console.warn(err));
       }
     }
 
@@ -1878,43 +1870,88 @@
       }
     }
 
-    function confirmDeleteClient(clientId) {
+    // ELIMINAR CLIENTE (CORREGIDO: ELIMINA CLIENTE Y TODOS SUS MOVIMIENTOS EN FIRESTORE Y LOCAL)
+    async function confirmDeleteClient(clientId) {
       const client = appData.clients.find(c => String(c.id) === String(clientId));
-      if (!client) return;
-
-      const m = getClientMetrics(clientId);
-      if (m.totalBalance > 0.009) {
-        showToast(`Tiene saldo deudor de $${m.totalBalance.toFixed(2)} USD`, 'error');
+      if (!client) {
+        showToast('Cliente no encontrado', 'error');
         return;
       }
 
-      if (!confirm(`¿Eliminar al cliente ${client.name}?`)) return;
-
-      if (db) {
-        db.collection("clients").doc(clientId).delete().catch(err => console.warn(err));
-        const txsToDelete = appData.transactions.filter(t => String(t.clientId) === String(clientId));
-        txsToDelete.forEach(tx => db.collection("transactions").doc(tx.id).delete().catch(e => {}));
+      const clientTxs = appData.transactions.filter(t => String(t.clientId) === String(clientId));
+      let confirmMsg = `¿Eliminar al cliente ${client.name}?`;
+      if (clientTxs.length > 0) {
+        confirmMsg = `El cliente ${client.name} tiene ${clientTxs.length} movimiento(s) registrado(s). Si continúas, se eliminarán sus facturas y abonos. ¿Deseas eliminarlo de todos modos?`;
       }
 
+      if (!confirm(confirmMsg)) return;
+
+      // 1. Eliminar en Firestore
+      if (db) {
+        try {
+          await db.collection("clients").doc(clientId).delete();
+          for (const tx of clientTxs) {
+            await db.collection("transactions").doc(tx.id).delete();
+          }
+        } catch (err) {
+          console.error("Error al eliminar en Firestore:", err);
+          showToast('Error de permisos al eliminar en Firebase', 'error');
+        }
+      }
+
+      // 2. Eliminar en memoria local
       appData.transactions = appData.transactions.filter(t => String(t.clientId) !== String(clientId));
       appData.clients = appData.clients.filter(c => String(c.id) !== String(clientId));
       saveData();
 
       closeModalDirect('modalEditClient');
-      if (currentClientIdForDetail === clientId) closeModalDirect('modalClientHistory');
+      if (currentClientIdForDetail === clientId) {
+        closeModalDirect('modalClientHistory');
+        currentClientIdForDetail = null;
+      }
       refreshDashboard();
-      showToast('Cliente eliminado', 'info');
+      showToast('Cliente y sus registros eliminados correctamente', 'info');
     }
 
-    function confirmDeleteTransaction(txId) {
-      if (!confirm("¿Eliminar este movimiento? Se recalculará la deuda.")) return;
-      if (db) {
-        db.collection("transactions").doc(txId).delete().catch(err => console.warn(err));
+    // ELIMINAR MOVIMIENTO / FACTURA / ABONO (CORREGIDO)
+    async function confirmDeleteTransaction(txId) {
+      const tx = appData.transactions.find(t => String(t.id) === String(txId));
+      if (!tx) {
+        showToast('Registro no encontrado', 'error');
+        return;
       }
-      appData.transactions = appData.transactions.filter(t => String(t.id) !== String(txId));
+
+      const tipoNombre = tx.type === 'SALE' ? `la factura ${tx.invoiceCode || tx.ref}` : 'este abono';
+      if (!confirm(`¿Estás seguro de eliminar ${tipoNombre}? Se recalculará la deuda.`)) return;
+
+      // Si es una factura, también eliminar los abonos asociados a esa factura específica
+      const associatedPayments = tx.type === 'SALE' 
+        ? appData.transactions.filter(t => t.type === 'PAYMENT' && String(t.invoiceId) === String(txId))
+        : [];
+
+      // 1. Eliminar en Firestore
+      if (db) {
+        try {
+          await db.collection("transactions").doc(txId).delete();
+          for (const p of associatedPayments) {
+            await db.collection("transactions").doc(p.id).delete();
+          }
+        } catch (err) {
+          console.error("Error al eliminar movimiento en Firestore:", err);
+          showToast('Error al eliminar en Firebase', 'error');
+        }
+      }
+
+      // 2. Eliminar en local
+      const idsToDelete = [String(txId), ...associatedPayments.map(p => String(p.id))];
+      appData.transactions = appData.transactions.filter(t => !idsToDelete.includes(String(t.id)));
       saveData();
       refreshDashboard();
-      showToast('Movimiento eliminado y saldo recalculado', 'info');
+
+      if (currentClientIdForDetail) {
+        showClientHistory(currentClientIdForDetail);
+      }
+      showToast('Registro eliminado y saldo recalculado', 'info');
     }
 
     // ACCIONES RÁPIDAS
@@ -2119,7 +2156,6 @@
       setTimeout(() => toast.remove(), 3200);
     }
 
-    // IMPRESIÓN LIMPIA DE DOCUMENTOS
     function executeCleanPrint(fullHtmlDocument) {
       let printFrame = document.getElementById('cleanPrintIframe');
       if (printFrame) printFrame.remove();
