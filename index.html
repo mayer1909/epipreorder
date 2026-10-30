@@ -737,7 +737,7 @@
   <iframe id="cleanPrintIframe" class="hidden"></iframe>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT: LÓGICA DE PERSISTENCIA Y ELIMINACIÓN CORREGIDA                -->
+  <!-- JAVASCRIPT: LÓGICA GENERAL CON OPERACIONES DE BORRADO ASÍNCRONAS         -->
   <!-- ========================================================================= -->
   <script>
     // BASE DE DATOS: credicontrol-usa (TUS CREDENCIALES REALES)
@@ -909,7 +909,7 @@
     }
 
     function startCloudSync() {
-      if (!db) return;
+      if (!db || !auth || !auth.currentUser) return;
       try {
         db.collection("clients").onSnapshot((snapshot) => {
           appData.clients = [];
@@ -1100,7 +1100,6 @@
       if (tEl) tEl.innerText = `$${formatCurrency(totalSale)}`;
     }
 
-    // REGISTRAR VENTA / FACTURA (CON ID DE FIRESTORE SINCRONIZADO)
     async function handleSaveSale(e) {
       if (e) e.preventDefault();
       const clientId = document.getElementById('saleClientId')?.value;
@@ -1136,7 +1135,6 @@
       const invoiceCode = getNextInvoiceNumber();
       const concept = items.map(it => `${it.qty}x ${it.name}`).join(', ');
 
-      // Generar un ID único de documento para sincronizar local y nube
       const docId = db ? db.collection("transactions").doc().id : 'tx_' + Date.now();
 
       const newTx = {
@@ -1779,7 +1777,6 @@
       }
     }
 
-    // REGISTRO DE CLIENTES (CON ID DE FIRESTORE SINCRONIZADO)
     function handleSaveClient(e) {
       if (e) e.preventDefault();
       const name = document.getElementById('clientName')?.value.trim();
@@ -1870,7 +1867,7 @@
       }
     }
 
-    // ELIMINAR CLIENTE (CORREGIDO: ELIMINA CLIENTE Y TODOS SUS MOVIMIENTOS EN FIRESTORE Y LOCAL)
+    // ELIMINAR CLIENTE: Borra en Firestore y en memoria
     async function confirmDeleteClient(clientId) {
       const client = appData.clients.find(c => String(c.id) === String(clientId));
       if (!client) {
@@ -1881,25 +1878,31 @@
       const clientTxs = appData.transactions.filter(t => String(t.clientId) === String(clientId));
       let confirmMsg = `¿Eliminar al cliente ${client.name}?`;
       if (clientTxs.length > 0) {
-        confirmMsg = `El cliente ${client.name} tiene ${clientTxs.length} movimiento(s) registrado(s). Si continúas, se eliminarán sus facturas y abonos. ¿Deseas eliminarlo de todos modos?`;
+        confirmMsg = `El cliente ${client.name} tiene ${clientTxs.length} movimiento(s) registrado(s). Si continúas, se borrarán todas sus facturas y abonos. ¿Deseas continuar?`;
       }
 
       if (!confirm(confirmMsg)) return;
 
-      // 1. Eliminar en Firestore
+      // 1. Borrado físico en Firestore
       if (db) {
         try {
-          await db.collection("clients").doc(clientId).delete();
-          for (const tx of clientTxs) {
-            await db.collection("transactions").doc(tx.id).delete();
-          }
+          await db.collection("clients").doc(String(clientId)).delete();
+
+          const batch = db.batch();
+          const snapshot = await db.collection("transactions").where("clientId", "==", String(clientId)).get();
+          snapshot.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+          await batch.commit();
+          console.log(`Cliente ${clientId} y sus transacciones eliminados en Firestore.`);
         } catch (err) {
-          console.error("Error al eliminar en Firestore:", err);
-          showToast('Error de permisos al eliminar en Firebase', 'error');
+          console.error("Error crítico al eliminar en Firestore:", err);
+          showToast('No se pudo borrar en Firebase. Revisa las Reglas de Firestore.', 'error');
+          return;
         }
       }
 
-      // 2. Eliminar en memoria local
+      // 2. Limpieza de memoria local
       appData.transactions = appData.transactions.filter(t => String(t.clientId) !== String(clientId));
       appData.clients = appData.clients.filter(c => String(c.id) !== String(clientId));
       saveData();
@@ -1910,10 +1913,10 @@
         currentClientIdForDetail = null;
       }
       refreshDashboard();
-      showToast('Cliente y sus registros eliminados correctamente', 'info');
+      showToast('Cliente y sus movimientos eliminados definitivamente', 'info');
     }
 
-    // ELIMINAR MOVIMIENTO / FACTURA / ABONO (CORREGIDO)
+    // ELIMINAR FACTURA O ABONO: Borra en Firestore y en memoria
     async function confirmDeleteTransaction(txId) {
       const tx = appData.transactions.find(t => String(t.id) === String(txId));
       if (!tx) {
@@ -1921,37 +1924,44 @@
         return;
       }
 
-      const tipoNombre = tx.type === 'SALE' ? `la factura ${tx.invoiceCode || tx.ref}` : 'este abono';
-      if (!confirm(`¿Estás seguro de eliminar ${tipoNombre}? Se recalculará la deuda.`)) return;
+      const tipoTexto = tx.type === 'SALE' ? `la factura ${tx.invoiceCode || tx.ref}` : 'este abono';
+      if (!confirm(`¿Estás seguro de eliminar ${tipoTexto}? Se recalculará la deuda.`)) return;
 
-      // Si es una factura, también eliminar los abonos asociados a esa factura específica
       const associatedPayments = tx.type === 'SALE' 
         ? appData.transactions.filter(t => t.type === 'PAYMENT' && String(t.invoiceId) === String(txId))
         : [];
 
-      // 1. Eliminar en Firestore
+      // 1. Borrado físico en Firestore
       if (db) {
         try {
-          await db.collection("transactions").doc(txId).delete();
-          for (const p of associatedPayments) {
-            await db.collection("transactions").doc(p.id).delete();
+          await db.collection("transactions").doc(String(txId)).delete();
+
+          if (tx.type === 'SALE') {
+            const batch = db.batch();
+            const abonosSnapshot = await db.collection("transactions").where("invoiceId", "==", String(txId)).get();
+            abonosSnapshot.forEach(doc => {
+              batch.delete(doc.ref);
+            });
+            await batch.commit();
           }
+          console.log(`Transacción ${txId} eliminada en Firestore.`);
         } catch (err) {
-          console.error("Error al eliminar movimiento en Firestore:", err);
-          showToast('Error al eliminar en Firebase', 'error');
+          console.error("Error al eliminar en Firestore:", err);
+          showToast('Error de permisos al eliminar en Firebase', 'error');
+          return;
         }
       }
 
-      // 2. Eliminar en local
-      const idsToDelete = [String(txId), ...associatedPayments.map(p => String(p.id))];
-      appData.transactions = appData.transactions.filter(t => !idsToDelete.includes(String(t.id)));
+      // 2. Limpieza en local
+      const idsABorrar = [String(txId), ...associatedPayments.map(p => String(p.id))];
+      appData.transactions = appData.transactions.filter(t => !idsABorrar.includes(String(t.id)));
       saveData();
       refreshDashboard();
 
       if (currentClientIdForDetail) {
         showClientHistory(currentClientIdForDetail);
       }
-      showToast('Registro eliminado y saldo recalculado', 'info');
+      showToast('Registro eliminado correctamente', 'info');
     }
 
     // ACCIONES RÁPIDAS
