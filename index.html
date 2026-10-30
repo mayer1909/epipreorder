@@ -234,7 +234,7 @@
     </main>
   </div>
 
-  <!-- MODAL: FACTURA / COMPRA A CRÉDITO CON MULTI-PRODUCTOS -->
+  <!-- MODAL: FACTURA / COMPRA A CRÉDITO -->
   <div id="modalSale" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-5 modal-backdrop">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[94vh] flex flex-col overflow-hidden modal-card border border-purple-200">
       <div class="px-6 py-4 border-b border-purple-100 bg-gradient-to-r from-purple-50 to-indigo-50 flex items-center justify-between">
@@ -449,7 +449,7 @@
       </div>
 
       <div class="flex-1 overflow-y-auto p-5">
-        <table class="w-full text-left text-sm border-collapse">
+        <table class="w-full text-left border-collapse text-sm">
           <thead>
             <tr class="text-xs uppercase font-semibold text-slate-400 border-b border-slate-200 pb-2">
               <th class="py-2.5 px-3">Fecha</th>
@@ -467,12 +467,12 @@
     </div>
   </div>
 
-  <!-- MODAL: REGISTRAR ABONO (CON Nº COMPROBANTE Y NOTA ADICIONAL) -->
+  <!-- MODAL: REGISTRAR ABONO (SOLO POR FACTURA ESPECÍFICA) -->
   <div id="modalPayment" class="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 modal-backdrop">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform modal-card border border-emerald-200">
       <div class="px-6 py-4 border-b border-emerald-100 bg-emerald-50/80 flex items-center justify-between">
         <h3 class="text-base font-bold text-emerald-900 flex items-center gap-2">
-          <i class="fa-solid fa-hand-holding-dollar text-fintech-600"></i> Registrar Abono a Cuenta / Factura
+          <i class="fa-solid fa-hand-holding-dollar text-fintech-600"></i> Registrar Abono a Factura
         </h3>
         <button type="button" onclick="dismissActionModal('modalPayment')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
@@ -483,14 +483,14 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Abonar a Factura Específica (Opcional)</label>
-          <select id="paymentInvoiceId" onchange="onPaymentInvoiceChanged()" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-fintech-500">
-            <option value="">-- Abono a cuenta general --</option>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Factura a Abonar *</label>
+          <select id="paymentInvoiceId" onchange="onPaymentInvoiceChanged()" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-fintech-500 font-semibold text-purple-900">
+            <option value="">-- Selecciona una factura con saldo --</option>
           </select>
         </div>
 
         <div class="p-3.5 rounded-xl border bg-slate-50 border-slate-200 flex justify-between items-center">
-          <span id="paymentDebtLabelText" class="text-xs font-bold uppercase text-slate-500">Deuda Total Pendiente:</span>
+          <span id="paymentDebtLabelText" class="text-xs font-bold uppercase text-slate-500">Saldo Pendiente de la Factura:</span>
           <span id="paymentSelectedBrandDebtAmount" class="text-base font-black text-rose-600">$0.00 USD</span>
         </div>
 
@@ -506,7 +506,7 @@
         </div>
 
         <div id="paymentAmountErrorBox" class="hidden p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold">
-          El monto excede el saldo pendiente.
+          El monto excede el saldo pendiente de la factura.
         </div>
 
         <div>
@@ -520,7 +520,6 @@
           </select>
         </div>
 
-        <!-- CAMPOS: Nº COMPROBANTE / REF Y NOTA ADICIONAL -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nº Comprobante / Ref</label>
@@ -534,7 +533,7 @@
 
         <div class="pt-2 flex justify-end gap-2">
           <button type="button" onclick="dismissActionModal('modalPayment')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
-          <button type="submit" id="btnSubmitPayment" class="px-5 py-2 text-sm font-bold text-white bg-fintech-600 hover:bg-fintech-700 rounded-xl transition shadow-sm">Procesar Abono</button>
+          <button type="submit" id="btnSubmitPayment" class="px-5 py-2 text-sm font-bold text-white bg-fintech-600 hover:bg-fintech-700 rounded-xl transition shadow-sm">Procesar Abono a Factura</button>
         </div>
       </form>
     </div>
@@ -622,7 +621,7 @@
     </div>
   </div>
 
-  <!-- MODAL: REPORTE FINANCIERO CON RANGO DE FECHAS Y DETALLE DE FACTURAS -->
+  <!-- MODAL: REPORTE FINANCIERO CON RANGO DE FECHAS -->
   <div id="modalBrandReport" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-5 modal-backdrop">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden modal-card border border-slate-200">
       <div class="p-5 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white flex flex-wrap items-center justify-between gap-4">
@@ -688,7 +687,7 @@
           </div>
         </div>
 
-        <!-- TABLA DETALLADA: FACTURAS DEL PERÍODO CON FACTURADO, PAGADO Y GANANCIA -->
+        <!-- TABLA DETALLADA: FACTURAS DEL PERÍODO -->
         <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -737,7 +736,7 @@
   <iframe id="cleanPrintIframe" class="hidden"></iframe>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT: LÓGICA GENERAL CON CREDENCIALES REALES                        -->
+  <!-- JAVASCRIPT: LÓGICA GENERAL                                                -->
   <!-- ========================================================================= -->
   <script>
     // CREDENCIALES DE ACCESO
@@ -745,7 +744,7 @@
     const VALID_PASS = "abonos1234#";
     const AUTH_SESSION_KEY = "credicontrol_usa_session_active_v1";
 
-    // BASE DE DATOS: credicontrol-usa (CREDENCIALES REALES)
+    // BASE DE DATOS: credicontrol-usa
     const firebaseConfig = {
       apiKey: "AIzaSyAoM-EVa1LTO0mb2Op7uEAoqRDwtijpbeo",
       authDomain: "credicontrol-usa.firebaseapp.com",
@@ -882,6 +881,26 @@
       } catch (err) {
         console.warn("Error en sync cloud:", err);
       }
+    }
+
+    // GENERADOR CONSECUTIVO DE FACTURAS (Arranca en 000001 y suma 1)
+    function getNextInvoiceNumber() {
+      const sales = appData.transactions.filter(t => t.type === 'SALE');
+      let maxNumber = 0;
+
+      sales.forEach(sale => {
+        const code = String(sale.invoiceCode || sale.ref || '');
+        const match = code.match(/\d+/g);
+        if (match) {
+          const num = parseInt(match[match.length - 1], 10);
+          if (!isNaN(num) && num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+      });
+
+      const nextNumber = maxNumber + 1;
+      return 'FACT-' + String(nextNumber).padStart(6, '0');
     }
 
     // MULTI-PRODUCTOS EN FORMULARIO DE FACTURA (CREACIÓN)
@@ -1038,7 +1057,7 @@
       if (tEl) tEl.innerText = `$${formatCurrency(totalSale)}`;
     }
 
-    // REGISTRAR VENTA / FACTURA (CIERRA INMEDIATAMENTE EL MODAL)
+    // REGISTRAR VENTA / FACTURA (CON NÚMERO CONSECUTIVO AUTOMÁTICO)
     async function handleSaveSale(e) {
       if (e) e.preventDefault();
       const clientId = document.getElementById('saleClientId')?.value;
@@ -1071,7 +1090,8 @@
         items.push({ name, qty, cost, price, subtotal });
       }
 
-      const invoiceCode = 'FACT-' + Date.now().toString().slice(-6);
+      // Genera el número consecutivo correlativo (+1)
+      const invoiceCode = getNextInvoiceNumber();
       const concept = items.map(it => `${it.qty}x ${it.name}`).join(', ');
 
       const newTx = {
@@ -1137,7 +1157,7 @@
       openModalDirect('modalEditSale');
     }
 
-    // GUARDAR ACTUALIZACIÓN DE FACTURA (CIERRA INMEDIATAMENTE)
+    // GUARDAR ACTUALIZACIÓN DE FACTURA
     async function handleUpdateSale(e) {
       if (e) e.preventDefault();
       const txId = document.getElementById('editSaleTxId').value;
@@ -1547,70 +1567,87 @@
       renderHistoryTransactions();
     }
 
-    // GESTIÓN DE ABONOS (CON SELECCIÓN DE FACTURA, REF Y NOTAS)
+    // GESTIÓN DE ABONOS EXCLUSIVOS POR FACTURA (OBLIGATORIO)
     function onPaymentClientChanged() {
       const clientId = document.getElementById('paymentClientId')?.value;
       const invoiceSelect = document.getElementById('paymentInvoiceId');
       const debtLabel = document.getElementById('paymentSelectedBrandDebtAmount');
       const debtLabelText = document.getElementById('paymentDebtLabelText');
+      const btn = document.getElementById('btnSubmitPayment');
 
       if (!invoiceSelect) return;
-      invoiceSelect.innerHTML = '<option value="">-- Abono a cuenta general --</option>';
+      invoiceSelect.innerHTML = '<option value="">-- Selecciona una factura con saldo --</option>';
 
       if (!clientId) {
         if (debtLabel) debtLabel.innerText = "$0.00 USD";
+        if (btn) btn.disabled = true;
         return;
       }
 
       const clientSales = appData.transactions.filter(t => String(t.clientId) === String(clientId) && t.type === 'SALE');
+      let pendingCount = 0;
+
       clientSales.forEach(s => {
         const bal = getInvoiceBalance(s.id);
         if (bal > 0) {
+          pendingCount++;
           const invCode = s.invoiceCode || s.ref || 'FACT';
-          invoiceSelect.innerHTML += `<option value="${s.id}">${invCode} (${formatDate(s.date)}) - Debe: $${formatCurrency(bal)} USD</option>`;
+          invoiceSelect.innerHTML += `<option value="${s.id}">${invCode} (${formatDate(s.date)}) - Saldo: $${formatCurrency(bal)} USD</option>`;
         }
       });
 
-      if (debtLabelText) debtLabelText.innerText = "Deuda Total Pendiente:";
-      const m = getClientMetrics(clientId);
-      if (debtLabel) debtLabel.innerText = `$${formatCurrency(m.totalBalance)} USD`;
+      if (pendingCount === 0) {
+        invoiceSelect.innerHTML = '<option value="">-- Este cliente no tiene facturas con saldo pendiente --</option>';
+        if (debtLabel) debtLabel.innerText = "$0.00 USD";
+        if (btn) btn.disabled = true;
+      } else {
+        if (debtLabelText) debtLabelText.innerText = "Saldo Pendiente de la Factura:";
+        if (debtLabel) debtLabel.innerText = "Selecciona una factura";
+      }
+
+      validatePaymentAmountStrictly();
     }
 
     function onPaymentInvoiceChanged() {
       const invoiceId = document.getElementById('paymentInvoiceId')?.value;
-      const clientId = document.getElementById('paymentClientId')?.value;
       const debtLabel = document.getElementById('paymentSelectedBrandDebtAmount');
       const debtLabelText = document.getElementById('paymentDebtLabelText');
 
       if (invoiceId) {
         const bal = getInvoiceBalance(invoiceId);
-        if (debtLabelText) debtLabelText.innerText = "Saldo de la Factura:";
+        if (debtLabelText) debtLabelText.innerText = "Saldo Pendiente de la Factura:";
         if (debtLabel) debtLabel.innerText = `$${formatCurrency(bal)} USD`;
       } else {
-        if (debtLabelText) debtLabelText.innerText = "Deuda Total Pendiente:";
-        const m = getClientMetrics(clientId);
-        if (debtLabel) debtLabel.innerText = `$${formatCurrency(m.totalBalance)} USD`;
+        if (debtLabel) debtLabel.innerText = "$0.00 USD";
       }
       validatePaymentAmountStrictly();
     }
 
+    // VALIDACIÓN: No muestra error si el campo está vacío o es 0
     function validatePaymentAmountStrictly() {
-      const clientId = document.getElementById('paymentClientId')?.value;
       const invoiceId = document.getElementById('paymentInvoiceId')?.value;
-      const amount = parseFloat(document.getElementById('paymentAmountUSD')?.value) || 0;
+      const amountInput = document.getElementById('paymentAmountUSD')?.value.trim();
+      const amount = parseFloat(amountInput) || 0;
       const err = document.getElementById('paymentAmountErrorBox');
       const btn = document.getElementById('btnSubmitPayment');
 
-      let maxAllowed = 0;
-      if (invoiceId) {
-        maxAllowed = getInvoiceBalance(invoiceId);
-      } else if (clientId) {
-        maxAllowed = getClientMetrics(clientId).totalBalance;
+      if (!invoiceId) {
+        if (err) err.classList.add('hidden');
+        if (btn) btn.disabled = true;
+        return;
       }
 
-      if (amount > maxAllowed || maxAllowed <= 0) {
+      const maxAllowed = getInvoiceBalance(invoiceId);
+
+      if (!amountInput || amount <= 0) {
+        if (err) err.classList.add('hidden');
+        if (btn) btn.disabled = true;
+        return;
+      }
+
+      if (amount > maxAllowed) {
         if (err) {
-          err.innerText = invoiceId ? `El monto excede el saldo de la factura ($${formatCurrency(maxAllowed)} USD)` : `El monto excede la deuda del cliente ($${formatCurrency(maxAllowed)} USD)`;
+          err.innerText = `El monto excede el saldo de la factura ($${formatCurrency(maxAllowed)} USD)`;
           err.classList.remove('hidden');
         }
         if (btn) btn.disabled = true;
@@ -1623,26 +1660,32 @@
     async function handleSavePayment(e) {
       if (e) e.preventDefault();
       const clientId = document.getElementById('paymentClientId')?.value;
-      const invoiceId = document.getElementById('paymentInvoiceId')?.value || null;
+      const invoiceId = document.getElementById('paymentInvoiceId')?.value;
       const date = document.getElementById('paymentDate')?.value;
       const amount = parseFloat(document.getElementById('paymentAmountUSD')?.value) || 0;
       const method = document.getElementById('paymentMethod')?.value;
       const ref = document.getElementById('paymentRef')?.value.trim();
       const notes = document.getElementById('paymentNotes')?.value.trim();
 
-      if (!clientId || amount <= 0) return;
-
-      let concept = 'Abono a Cuenta General';
-      if (invoiceId) {
-        const targetSale = appData.transactions.find(t => String(t.id) === String(invoiceId));
-        const invCode = targetSale?.invoiceCode || targetSale?.ref || 'Factura';
-        concept = `Abono a ${invCode}`;
+      if (!clientId || !invoiceId || amount <= 0) {
+        showToast('Debes seleccionar un cliente, una factura válida y un monto', 'error');
+        return;
       }
+
+      const maxAllowed = getInvoiceBalance(invoiceId);
+      if (amount > maxAllowed) {
+        showToast(`El monto excede el saldo de la factura ($${formatCurrency(maxAllowed)} USD)`, 'error');
+        return;
+      }
+
+      const targetSale = appData.transactions.find(t => String(t.id) === String(invoiceId));
+      const invCode = targetSale?.invoiceCode || targetSale?.ref || 'Factura';
+      const concept = `Abono a ${invCode}`;
 
       const newTx = {
         id: 'tx_' + Date.now(),
         clientId: String(clientId),
-        invoiceId: invoiceId ? String(invoiceId) : null,
+        invoiceId: String(invoiceId),
         type: 'PAYMENT',
         brand: BRAND_NAME,
         date,
@@ -1663,10 +1706,10 @@
       refreshDashboard();
 
       const savedClient = appData.clients.find(c => String(c.id) === String(clientId));
-      const remainingTotal = getClientMetrics(clientId).totalBalance;
+      const remainingInvoiceBalance = getInvoiceBalance(invoiceId);
 
-      generateReceiptModal(newTx, savedClient, remainingTotal);
-      showToast('Abono registrado con éxito', 'success');
+      generateReceiptModal(newTx, savedClient, remainingInvoiceBalance);
+      showToast(`Abono a ${invCode} registrado con éxito`, 'success');
 
       if (returnToHistoryOnClose && currentClientIdForDetail) {
         showClientHistory(currentClientIdForDetail);
@@ -1761,6 +1804,11 @@
 
       const idx = appData.clients.findIndex(c => String(c.id) === String(id));
       if (idx === -1) return;
+
+      if (appData.clients.some(c => String(c.id) !== String(id) && c.doc.toLowerCase() === doc.toLowerCase())) {
+        showToast('Esa cédula ya pertenece a otro cliente', 'error');
+        return;
+      }
 
       const updated = { ...appData.clients[idx], name, doc, phone, address };
       appData.clients[idx] = updated;
@@ -1872,7 +1920,7 @@
       openModalDirect('modalClient');
     }
 
-    // REPORTE FINANCIERO CON RANGO DE FECHAS, FACTURADO, PAGADO Y GANANCIAS
+    // REPORTE FINANCIERO CON RANGO DE FECHAS
     function openBrandReportModal() {
       const sInput = document.getElementById('reportStartDate');
       const eInput = document.getElementById('reportEndDate');
@@ -2239,6 +2287,79 @@
       executeCleanPrint(reportHtml);
     }
 
+    function printBrandFinancialReport() {
+      const sInput = document.getElementById('reportStartDate')?.value;
+      const eInput = document.getElementById('reportEndDate')?.value;
+      const sEl = document.getElementById('repGlobalSales')?.innerText || '$0.00';
+      const pEl = document.getElementById('repGlobalPaid')?.innerText || '$0.00';
+      const prEl = document.getElementById('repGlobalProfit')?.innerText || '$0.00';
+      const dEl = document.getElementById('repGlobalDebt')?.innerText || '$0.00';
+
+      const tbody = document.getElementById('repInvoicesTableBody');
+      const tableRows = tbody ? tbody.innerHTML : '';
+
+      const printHtml = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>Reporte Financiero EPI PREORDER</title>
+          <style>
+            @page { size: A4 portrait; margin: 12mm; }
+            body { font-family: sans-serif; font-size: 11px; color: #1e293b; margin: 0; }
+            .header { border-bottom: 2px solid #7e22ce; padding-bottom: 8px; margin-bottom: 12px; }
+            .kpi-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
+            .kpi-box { width: 23%; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f1f5f9; padding: 6px 8px; text-align: left; font-size: 10px; border-bottom: 2px solid #cbd5e1; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 style="margin:0; font-size:18px; color:#6b21a8;">💎 EPI PREORDER - REPORTE DE FACTURACIÓN</h1>
+            <p style="margin:2px 0 0 0; color:#64748b; font-size:10px;">
+              Período: ${sInput ? formatDate(sInput) : 'Inicio'} al ${eInput ? formatDate(eInput) : 'Actual'} • Fecha Emisión: ${new Date().toLocaleString('es-ES')}
+            </p>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi-box">
+              <span style="font-size:9px; color:#64748b; font-weight:bold;">FACTURADO</span>
+              <div style="font-size:14px; font-weight:900;">${sEl}</div>
+            </div>
+            <div class="kpi-box">
+              <span style="font-size:9px; color:#059669; font-weight:bold;">PAGADO</span>
+              <div style="font-size:14px; font-weight:900; color:#059669;">${pEl}</div>
+            </div>
+            <div class="kpi-box">
+              <span style="font-size:9px; color:#4338ca; font-weight:bold;">GANANCIA</span>
+              <div style="font-size:14px; font-weight:900; color:#4338ca;">${prEl}</div>
+            </div>
+            <div class="kpi-box">
+              <span style="font-size:9px; color:#b91c1c; font-weight:bold;">DEUDA PENDIENTE</span>
+              <div style="font-size:14px; font-weight:900; color:#b91c1c;">${dEl}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Nº Factura</th>
+                <th>Cliente</th>
+                <th style="text-align:right;">Monto Facturado</th>
+                <th style="text-align:right;">Monto Pagado</th>
+                <th style="text-align:right;">Ganancia</th>
+                <th style="text-align:right;">Saldo Deudor</th>
+                <th style="text-align:center;">Estado</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </body>
+        </html>
+      `;
+      executeCleanPrint(printHtml);
+    }
+
     function sendWhatsAppSummary() {
       if (!currentClientIdForDetail) return;
       const client = appData.clients.find(c => String(c.id) === String(currentClientIdForDetail));
@@ -2305,7 +2426,7 @@
       exportToExcelWorkbook();
     }
 
-    function generateReceiptModal(tx, client, totalRemaining) {
+    function generateReceiptModal(tx, client, remainingInvoiceBalance) {
       const receiptContainer = document.getElementById('receiptContent');
       const receiptNum = 'REC-' + String(tx.id).replace('tx_', '').slice(-6);
 
@@ -2343,8 +2464,8 @@
             </div>
             <div class="bg-slate-50 p-2.5 rounded-xl space-y-1 mt-2">
               <div class="flex justify-between text-xs">
-                <span class="font-bold text-slate-700">Deuda Restante:</span>
-                <span class="font-black ${totalRemaining > 0 ? 'text-rose-600' : 'text-emerald-600'}">$${formatCurrency(totalRemaining)} USD</span>
+                <span class="font-bold text-slate-700">Saldo Restante Factura:</span>
+                <span class="font-black ${remainingInvoiceBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}">$${formatCurrency(remainingInvoiceBalance)} USD</span>
               </div>
             </div>
           </div>
@@ -2361,15 +2482,15 @@
       returnToHistoryOnClose = true;
       closeModalDirect('modalClientHistory');
       const client = appData.clients.find(c => String(c.id) === String(tx.clientId));
-      const m = getClientMetrics(client?.id);
-      generateReceiptModal(tx, client, m.totalBalance);
+      const remaining = tx.invoiceId ? getInvoiceBalance(tx.invoiceId) : getClientMetrics(client?.id).totalBalance;
+      generateReceiptModal(tx, client, remaining);
     }
 
     function printPaymentReceipt(txId) {
       const tx = appData.transactions.find(t => String(t.id) === String(txId));
       if (!tx || tx.type !== 'PAYMENT') return;
       const client = appData.clients.find(c => String(c.id) === String(tx.clientId)) || {};
-      const m = getClientMetrics(client.id);
+      const remaining = tx.invoiceId ? getInvoiceBalance(tx.invoiceId) : getClientMetrics(client.id).totalBalance;
       const receiptNumber = 'REC-' + String(tx.id).replace('tx_', '').slice(-6);
 
       const html = `
@@ -2392,12 +2513,13 @@
         <body>
           <div class="header text-center">
             <h1 class="logo-title">💎 EPI PREORDER</h1>
-            <p style="margin:2px 0; font-size:10px; color:#64748b;">Comprobante de Abono</p>
+            <p style="margin:2px 0; font-size:10px; color:#64748b;">Comprobante de Abono a Factura</p>
             <p style="margin:4px 0 0 0; font-size:11px; font-weight:bold;">${receiptNumber}</p>
           </div>
           <div class="row"><span>Fecha:</span><strong>${formatDate(tx.date)}</strong></div>
           <div class="row"><span>Cliente:</span><strong>${client.name || ''}</strong></div>
           <div class="row"><span>Cédula:</span><strong>${client.doc || ''}</strong></div>
+          <div class="row"><span>Concepto:</span><strong>${tx.concept}</strong></div>
           <div class="row"><span>Método:</span><strong>${tx.method}</strong></div>
           ${tx.ref && tx.ref !== 'Comprobante' ? `<div class="row"><span>Nº Ref / Comp:</span><strong>${tx.ref}</strong></div>` : ''}
           ${tx.notes ? `<div class="row"><span>Nota:</span><span>${tx.notes}</span></div>` : ''}
@@ -2405,7 +2527,7 @@
             <div style="font-size:10px; text-transform:uppercase; color:#64748b;">Monto Abonado</div>
             <div class="amount">$${formatCurrency(tx.amount)} USD</div>
           </div>
-          <div class="row" style="font-weight:bold; color:#b91c1c;"><span>Deuda Pendiente:</span><strong>$${formatCurrency(m.totalBalance)} USD</strong></div>
+          <div class="row" style="font-weight:bold; color:#b91c1c;"><span>Saldo Restante Factura:</span><strong>$${formatCurrency(remaining)} USD</strong></div>
         </body>
         </html>
       `;
